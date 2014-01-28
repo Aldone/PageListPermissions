@@ -27,10 +27,10 @@ class ProcessPageListPermissions extends Process {
             'title' => 'Page List Permissions',
             'summary' => 'This module provides UI for Page List Permissions',
             'author' => 'Teppo Koivula',
-            'version' => 27,
+            'version' => 28,
             'singular' => true,
             'autoload' => false,
-            'requires' => 'PageListPermissions',
+            'requires' => array('PageListPermissions', 'ProcessUserGroups'),
             'permission' => 'user-admin',
         );
     }
