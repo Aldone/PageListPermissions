@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * Page List Permissions
+ *
+ * This module is intended as a helper module (and/or extension) to User Groups,
+ * making it possible to view and edit Page permissions directly from Page List.
+ * 
+ * @author Teppo Koivula
+ * @license http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License, version 2
+ * 
+ * ProcessWire 2.x 
+ * Copyright (C) 2010 by Ryan Cramer 
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ * 
+ * http://processwire.com
+ *
+ */
+class PageListPermissions extends WireData implements Module {
+
+    /**
+     * Return information about this module (required)
+     *
+     * @return array
+     */
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Page List Permissions',
+            'summary' => 'Enable viewing and editing permissions set by User Groups module via Page List',
+            'author' => 'Teppo Koivula',
+            'version' => 30,
+            'singular' => true,
+            'autoload' => true,
+            'installs' => 'ProcessPageListPermissions',
+        );
+    }
+
+    /**
+     * Initialization function
+     *
+     * This function attachs required hooks.
+     *
+     */
+    public function init() {
+        if ($this->user->hasPermission('user-admin')) {
+            $this->addHookAfter('ProcessPageListRender::getPageLabel', $this, 'hookGetPageLabel');
+            $this->addHookAfter('ProcessPageList::execute', $this, 'hookExecute');
+        }
+    }
+
+    /**
+     * Add access management icon to Page List
+     * 
+     * Access management icons are added after names of each page with template
+     * which includes manage_access field.
+     * 
+     * @param HookEvent $event
+     */
+    public function hookGetPageLabel(HookEvent $event) {
+
+        // this only applies to pages with access management enabled
+        $page = $event->arguments[0];
+        if (!$page->template->hasField('manage_access') || $page->isTrash()) return;
+
+        $icon = $page->manage_access && (count($page->view_groups) || count($page->edit_groups)) ? "lock" : "unlock-alt";
+        $status = $page->manage_access ? "active" : "disabled";
+        $icon = "<i class='access-management fa fa-{$icon} icon-{$icon} status-{$status}' data-page='{$page}'></i>";
+        $event->return .= $icon;
+
+    }
+
+    /**
+     * Inject scripts and styles to Page Edit and translations to JS config var
+     * 
+     * @param HookEvent $event
+     */
+    public function hookExecute(HookEvent $event) {
+        
+        // load MarkupAdminDataTable (we'll need it's styles later)
+        $table = $this->modules->get("MarkupAdminDataTable");
+
+        // inject translations
+        $this->config->js('i18n', array(
+            'ajaxError' => __("An error occurred, please try again"),
+            'notAllowed' => __("Not allowed for this group"),
+        ));
+
+        // inject scripts and styles
+        $class = $this->className();
+        $info = $this->getModuleInfo();
+        $version = (int) $info['version'];
+        if (is_file($this->config->paths->$class . "$class.js")) $this->config->scripts->add($this->config->urls->$class . "$class.js?v=$version");
+        if (is_file($this->config->paths->$class . "$class.css")) $this->config->styles->add($this->config->urls->$class . "$class.css?v=$version");
+
+    }
+
+}

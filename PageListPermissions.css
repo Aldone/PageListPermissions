@@ -1,0 +1,140 @@
+body {
+    overflow-y: scroll;
+}
+
+.access-management-close {
+    position: absolute;
+    right: -0.25em;
+    top: -1.85em;
+    color: #333;
+    font-size: 1em;
+    padding: 0.25em 0.35em;
+}
+
+.content .PageList .PageListItem > a.PageListPage i.access-management {
+    color: #ff5c00;
+    padding-left: 0.5em;
+    display: inline-block;
+    text-decoration: none !important;
+}
+
+body.access-management-loading *:hover {
+    cursor: progress;
+}
+
+i.access-management.status-disabled {
+    opacity: 0.2;
+}
+
+i.access-management.open {
+    color: red;
+    opacity: 1;
+}
+
+#access-management {
+    position: absolute;
+    margin-top: -2em;
+    overflow: visible;
+    background: #fefefe;
+    border: 5px solid #eee;
+    box-shadow: inset 0 0 1px #333;
+    border-radius: 2px;
+    padding: 0.5em 1em;
+    min-height: 50px;
+    z-index: 100;
+    width: 50%;
+}
+
+#access-management.preview .edit-only,
+#access-management.edit .preview-only {
+    display: none;
+}
+
+#access-management-overlay {
+    top: 0;
+    left: 0;
+    z-index: 98;
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+    display: none;
+    background: #fff;
+    position: absolute;
+}
+
+#access-management-overlay.transparent {
+    background: transparent;
+}
+
+body.access-management-overlay #content {
+    /* for PW 2.4 default admin theme */
+    z-index: auto;
+}
+
+#access-management.preview {
+    display: none;
+}
+
+#access-management.edit {
+    border: 5px solid #ddd;
+    padding-bottom: 1.05em;
+}
+
+#access-management .edit-disabled {
+    color: #888;
+}
+
+#access-management p {
+    font-style: italic;
+    text-align: center;
+    line-height: 1.6em;
+    padding-top: 0.15em;
+}
+
+#access-management p strong {
+    padding: 0.25em;
+    background: #eee;
+    border-radius: 2px;
+}
+
+#access-management table {
+    width: 100%;
+    font-family: font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+#access-management table th,
+#access-management table td {
+    padding: 0.25em;
+    border: 1px solid #eee;
+}
+
+#access-management table th,
+#access-management table th:hover {
+    color: #222;
+    background: #eee;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+#access-management table th.first {
+    width: 75%;
+}
+
+#access-management textarea {
+    display: none;
+}
+
+#access-management .decoration {
+    top: 8px;
+    color: #eee;
+    left: -18px;
+    width: 15px;
+    height: 15px;
+    font-size: 26px;
+    overflow: hidden;
+    position: absolute;
+    text-align: right;
+}
+
+#access-management.edit .decoration {
+    color: #ddd;
+}

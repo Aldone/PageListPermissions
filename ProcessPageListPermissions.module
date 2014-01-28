@@ -1,0 +1,236 @@
+<?php
+
+/**
+ * Process Page List Permissions
+ *
+ * This module provides UI for Page List Permissions.
+ * 
+ * @author Teppo Koivula
+ * @license http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License, version 2
+ *
+ * ProcessWire 2.x
+ * Copyright (C) 2010 by Ryan Cramer
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * http://processwire.com
+ *
+ */
+class ProcessPageListPermissions extends Process {
+    
+    /**
+     * Return information about this module (required)
+     *
+     * @return array
+     */
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Page List Permissions',
+            'summary' => 'This module provides UI for Page List Permissions',
+            'author' => 'Teppo Koivula',
+            'version' => 27,
+            'singular' => true,
+            'autoload' => false,
+            'requires' => 'PageListPermissions',
+            'permission' => 'user-admin',
+        );
+    }
+
+    /**
+     * Name of admin page used by this module
+     *
+     */
+    const PAGE_NAME = 'page-list-access-management';
+
+    /**
+     * Names of groups that can never gain edit permission
+     *
+     */
+    private $edit_disabled_for = array(
+        'everyone',
+        'logged',
+    );
+
+    /**
+     * Executed when a page with this Process assigned is accessed
+     *
+     * @param int $page_id ID of page to render markup for (optional)
+     */
+    public function ___execute($page_id = null) {
+
+        $page_id = $page_id ? (int) $page_id : (int) $this->input->get->id;
+        if (!$page_id) return false;
+
+        $page = $this->pages->get($page_id);
+        if (!$page->id) return false;
+        
+        $out = "";
+        $groups = $page->manage_access ? $page->view_groups->add($page->edit_groups) : null;
+        $table_class = !$page->manage_access || !count($groups) ? " class='edit-only'" : null;
+
+        if (!$page->manage_access) {
+            // This page doesn't currently manage it's access
+            $access_page = $page->inherit_access;
+            $out .= "<p class='preview-only'>" . sprintf(__("Permissions for this page are defined at %s. Click to define here instead."), "<strong>{$access_page->url}</strong>") . "</p>";
+        } else if (!count($groups)) {
+            // No group specific permissions set for this page
+            $out .= "<p class='preview-only'>" . __("No permissions defined for this page. Click to define permissions now.") . "</p>";
+        }
+
+        // Generate main content table (including both currently selected
+        // groups and form elements for adding new ones)
+        $table = "<table{$table_class}>";
+        $table .= "<tr>";
+        $table .= "<th class='first'>" . __("Group") . "</th>";
+        $table .= "<th>" . __("View") . "</th>";
+        $table .= "<th>" . __("Edit") . "</th>";
+        $table .= "</tr>";
+        if ($page->manage_access && count($groups)) {
+            foreach ($groups as $group) {
+                $perm = $page->edit_groups->get($group) ? "edit" : "view";
+                $edit_disabled = "";
+                $class = "";
+                if (in_array($group->name, $this->edit_disabled_for)) {
+                    $edit_disabled = " disabled='disabled' title='" . __('Not allowed for this group') . "'";
+                    $class = " class='edit-disabled'";
+                }
+                $table .= "<tr{$class}>";
+                $table .= "<td data-group-id='{$group->id}' data-group-name='{$group->name}'>{$group->title}</td>";
+                $table .= "<td><input type='checkbox' data-name='view' checked='checked' /></td>";
+                $table .= "<td><input type='checkbox' data-name='edit'$edit_disabled" . ($perm == "edit" ? " checked='checked'" : "") . " /></td>";
+                $table .= "</tr>";
+            }
+        }
+        $selectable_groups = $this->groups->find("id!=$groups, sort=sort");
+        $style = count($selectable_groups) ? "" : " style='display: none'";
+        $table .= "<tr{$style} class='edit-only'>";
+        $table .= "<td><select data-name='group'><option></option>";
+        foreach ($this->groups->find("id!=$groups") as $group) {
+            $class = in_array($group->name, $this->edit_disabled_for) ? " class='edit-disabled'" : "";
+            $table .= "<option{$class} value='{$group->id}' data-group-name='{$group->name}'>{$group->title}</option>";
+        }
+        $table .= "</select></td>";
+        $table .= "<td><input type='checkbox' data-name='view' checked='checked' disabled='disabled' title='" . __("View permission is required") . "' /></td>";
+        $table .= "<td><input type='checkbox' data-name='edit' /></td>";
+        $table .= "</tr>";
+        $table .= "</table>";
+        $out .= $table;
+        
+        // form action attibute
+        $moduleID = $this->modules->getModuleID($this); 
+        $modulePage = $this->pages->get("template=admin, process=$moduleID, name=" . self::PAGE_NAME); 
+        $action = $modulePage->url . "save/";
+
+        // hidden input for page id
+        $out .= "<input type='hidden' name='id' value='{$page->id}' />";
+
+        // textarea for data
+        $out .= "<textarea name='data'></textarea>";
+
+        // submit button
+        $submit = $this->modules->get("InputfieldSubmit");
+        $submit->attr('value', __("Save changes"));
+        $submit->attr('disabled', 'disabled');
+        $submit->attr('name', '');
+        $submit->attr('data-confirm', __("Unsaved changes will be lost. Are you sure you want to close the edit window?"));
+        $submit->addClass('ui-state-disabled');
+        $submit->addClass('edit-only');
+        $out .= $submit->render();
+
+        return "<form action='$action' method='POST'>$out</form>";
+        
+    }
+
+    /**
+     * Save permissions for target page
+     *
+     */
+    public function ___executeSave() {
+        
+        $id = (int) $this->input->post->id;
+        $data = json_decode($this->input->post->data);
+        if ($id && count($data)) {
+            $page = wire('pages')->get($id);
+            if ($page->id) {
+                $page->view_groups = new PageArray();
+                $page->edit_groups = new PageArray();
+                foreach ($data as $group_id => $perms) {
+                    $group_id_int = (int) $group_id;
+                    if ($group_id_int) $group = $this->pages->get("template=user-group, id=$group_id_int");
+                    if (!$group_id_int || !$group->id) throw new WireException("Invalid group: $group_id");
+                    if ($perms->view) {
+                        $page->view_groups->add($group);
+                        if ($perms->edit && !in_array($group->name, $this->edit_disabled_for)) {
+                            $page->edit_groups->add($group);
+                        }
+                    }
+                }
+                // enable manage_access if groups are/were selected
+                if (count($page->view_groups) || count($page->edit_groups)) $page->manage_access = 1;
+                // save page (triggers rebuilding of permissions)
+                $page->save();
+                // generate JSON output for JavaScript AJAX POST request
+                $icon = count($page->view_groups) || count($page->edit_groups) ? 'lock' : 'unlock-alt';
+                $status = $page->manage_access ? "active" : "disabled";
+                $return = array(
+                    'data' => $this->execute($page->id),
+                    'classes' => "status-{$status} fa-{$icon} icon-{$icon}",
+                );
+                header('Content-type: application/json');
+                die(json_encode($return));
+            }
+        } else {
+            throw new WireException("Invalid POST data");
+        }
+
+    }
+
+    /**
+     * Called only when this module is installed
+     *
+     * Creates new page with this Process module assigned.
+     *
+     */
+    public function ___install() {
+
+        // create a page for this module
+        $page = new Page();
+        $page->template = 'admin';
+        $page->name = self::PAGE_NAME; 
+        $page->process = $this; 
+        $page->parent = $this->pages->get($this->config->adminRootPageID)->child('name=setup');
+
+        // make page title match module title
+        $info = self::getModuleInfo();
+        $page->title = $info['title'];
+
+        // hide page from menu and save
+        $page->addStatus(Page::statusHidden);
+        $page->save();
+
+        // tell user that we've created a new page
+        $this->message("Created Page: {$page->path}"); 
+
+    }
+    
+    /**
+     * Called only when this module is uninstalled
+     *
+     * Removes page associated with this Process module.
+     *
+     */
+    public function ___uninstall() {
+
+        // find the page we installed, locating it by the process field (which has the module ID)
+        // it would probably be sufficient just to locate by name, but this is just to be extra sure.
+        $moduleID = $this->modules->getModuleID($this); 
+        $page = $this->pages->get("template=admin, process=$moduleID, name=" . self::PAGE_NAME . ", include=hidden");
+        
+        if ($page->id) {
+            // if we found the page, let the user know and delete it
+            $this->message("Deleting Page: {$page->path}"); 
+            $page->delete();
+        }
+
+    }
+    
+}
