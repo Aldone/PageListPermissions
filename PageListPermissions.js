@@ -256,7 +256,7 @@ $(function() {
                 $tr
                     .append('<td data-group-id="' + $option.val() + '" data-group-name="' + $option.data('group-name') + '">' + $option.text() + '</td>')
                     .append('<td><input type="checkbox" data-name="view" ' + (perms['view'] ? 'checked="checked"' : '') + '" /></td>')
-                    .append('<td><input type="checkbox" data-name="edit" ' + (disableEdit ? 'disabled="disabled" title="' + config.i18n.notAllowed + '" ' : '') + ' ' + (perms['edit'] && !disableEdit ? 'checked="checked"' : '') + '" /></td>')
+                    .append('<td><input type="checkbox" data-name="edit" ' + (disableEdit ? 'disabled="disabled" title="' + config.i18n.notAllowed + '" ' : '') + ' ' + (perms['edit'] && !disableEdit ? 'checked="checked"' : '') + ' /></td>')
                     .insertBefore($parent);
                 $option.remove();
                 if ($(this).find('> option').length == 1) $parent.hide();

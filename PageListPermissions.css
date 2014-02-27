@@ -80,10 +80,6 @@ body.access-management-overlay #content {
     padding-bottom: 1.05em;
 }
 
-#access-management .edit-disabled {
-    color: #888;
-}
-
 #access-management p {
     font-style: italic;
     text-align: center;
@@ -99,7 +95,6 @@ body.access-management-overlay #content {
 
 #access-management table {
     width: 100%;
-    font-family: font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
 #access-management table th,
