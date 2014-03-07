@@ -28,7 +28,7 @@ class PageListPermissions extends WireData implements Module {
             'title' => 'Page List Permissions',
             'summary' => 'Enable viewing and editing permissions set by User Groups module via Page List',
             'author' => 'Teppo Koivula',
-            'version' => 32,
+            'version' => 40,
             'singular' => true,
             'autoload' => true,
             'requires' => 'ProcessUserGroups',
@@ -61,11 +61,12 @@ class PageListPermissions extends WireData implements Module {
 
         // this only applies to pages with access management enabled
         $page = $event->arguments[0];
-        if (!$page->template->hasField('manage_access') || $page->isTrash()) return;
+        if (!$page->template->hasField('manage_access')) return;
 
         $icon = $page->manage_access && (count($page->view_groups) || count($page->edit_groups)) ? "lock" : "unlock-alt";
         $status = $page->manage_access ? "active" : "disabled";
-        $icon = "<i class='access-management fa fa-{$icon} icon-{$icon} status-{$status}' data-page='{$page}'></i>";
+        $trash = $page->isTrash() ? " trash" : "";
+        $icon = "<i class='access-management{$trash} fa fa-{$icon} icon-{$icon} status-{$status}' data-page='{$page}'></i>";
         $event->return .= $icon;
 
     }
@@ -80,10 +81,16 @@ class PageListPermissions extends WireData implements Module {
         // load MarkupAdminDataTable (we'll need it's styles later)
         $table = $this->modules->get("MarkupAdminDataTable");
 
-        // inject translations
-        $this->config->js('i18n', array(
-            'ajaxError' => __("An error occurred, please try again"),
-            'notAllowed' => __("Not allowed for this group"),
+        // inject settings and translations
+        $process = $this->modules->getModuleID("ProcessPageListPermissions");
+        $processPage = $this->pages->get("process=$process");
+        $this->config->js('PageListPermissions', array(
+            'i18n' => array(
+                'ajaxError' => __("An error occurred, please try again"),
+                'notAllowed' => __("Not allowed for this group"),
+            ),
+            'trashPageID' => $this->config->trashPageID,
+            'processPage' => $processPage->url(),
         ));
 
         // inject scripts and styles

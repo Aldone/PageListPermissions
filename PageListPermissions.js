@@ -1,7 +1,7 @@
 $(function() {
 
-    // URL of admin page responsible for both fetching *and* saving data
-    var if_url = config.urls.admin+'setup/page-list-access-management/';
+    // Config settings as defined by PageListPermissions.module
+    var moduleConfig = config.PageListPermissions;
 
     // $view objects are cached to avoid new request being sent for each access
     // management icon "mouse enter" or "click" event (note: 15 minute timeout)
@@ -143,10 +143,9 @@ $(function() {
                             $request = null;
                         }
                         $('body').addClass('access-management-loading');
-                        $request = $.get(if_url, { id: page }, function(data) {
+                        $request = $.get(moduleConfig.processPage, { id: page }, function(data) {
                             if (!data) {
-                                // PageListPermissions.module sets config.i18n
-                                alert(config.i18n.ajaxError);
+                                alert(moduleConfig.i18n.ajaxError);
                                 $i.trigger('mouseleave');
                                 return false;
                             }
@@ -214,11 +213,10 @@ $(function() {
                     // data not found from cache, load now
                     previewLock = true;
                     $('body').addClass('access-management-loading');
-                    $.get(if_url, { id: page }, function(data) {
+                    $.get(moduleConfig.processPage, { id: page }, function(data) {
                         previewLock = false;
                         if (!data) {
-                            // PageListPermissions.module sets config.i18n
-                            alert(config.i18n.ajaxError);
+                            alert(moduleConfig.i18n.ajaxError);
                             $i.click();
                             return false;
                         }
@@ -256,7 +254,7 @@ $(function() {
                 $tr
                     .append('<td data-group-id="' + $option.val() + '" data-group-name="' + $option.data('group-name') + '">' + $option.text() + '</td>')
                     .append('<td><input type="checkbox" data-name="view" ' + (perms['view'] ? 'checked="checked"' : '') + '" /></td>')
-                    .append('<td><input type="checkbox" data-name="edit" ' + (disableEdit ? 'disabled="disabled" title="' + config.i18n.notAllowed + '" ' : '') + ' ' + (perms['edit'] && !disableEdit ? 'checked="checked"' : '') + ' /></td>')
+                    .append('<td><input type="checkbox" data-name="edit" ' + (disableEdit ? 'disabled="disabled" title="' + moduleConfig.i18n.notAllowed + '" ' : '') + ' ' + (perms['edit'] && !disableEdit ? 'checked="checked"' : '') + ' /></td>')
                     .insertBefore($parent);
                 $option.remove();
                 if ($(this).find('> option').length == 1) $parent.hide();
@@ -290,7 +288,16 @@ $(function() {
             closeView();
         })
         .on('pageMoved', '.PageListItem', function() {
-            clearCache($(this).data('pageId'));
+            var pageHasIcon = $(this).find('> a > i.access-management:not(.trash)').length;
+            var pageIsTrash = $(this).parents('.PageList:first').prev('.PageListItem').hasClass('PageListID' + moduleConfig.trashPageID);
+            var pageChanged = (pageHasIcon && pageIsTrash) || (!pageHasIcon && !pageIsTrash);
+            var page = $(this).data('pageId');
+            clearCache(page);
+            if (pageChanged) {
+                var $i = $('.PageListID' + page).find('i.access-management');
+                if (pageIsTrash) $i.addClass('trash');
+                else $i.removeClass('trash');
+            }
         })
         .on('submit', 'form', function(event) {
             // edit permissions form has been submitted, trigger AJAX save
@@ -298,10 +305,9 @@ $(function() {
             var $i = $('i.access-management.open');
             var page = $i.data('page');
             $('body').addClass('access-management-loading');
-            $.post(if_url+'save', $(this).serialize(), function(data) {
+            $.post(moduleConfig.processPage+'save', $(this).serialize(), function(data) {
                 if (!data) {
-                    // PageListPermissions.module sets config.i18n
-                    alert(config.i18n.ajaxError);
+                    alert(moduleConfig.i18n.ajaxError);
                     closeView();
                     return false;
                 }

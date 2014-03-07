@@ -18,6 +18,10 @@ body {
     text-decoration: none !important;
 }
 
+.content .PageList .PageListItem > a.PageListPage i.access-management.trash {
+    display: none;
+}
+
 body.access-management-loading *:hover {
     cursor: progress;
 }
