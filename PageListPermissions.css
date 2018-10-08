@@ -11,6 +11,7 @@ body {
     padding: 0.25em 0.35em;
 }
 
+.pw-content .PageList .PageListItem > a.PageListPage i.access-management,
 .content .PageList .PageListItem > a.PageListPage i.access-management {
     color: #ff5c00;
     padding-left: 0.5em;
@@ -44,6 +45,7 @@ i.access-management.open {
     box-shadow: inset 0 0 1px #333;
     border-radius: 2px;
     padding: 0.5em 1em;
+    max-width: 600px;
     min-height: 50px;
     z-index: 100;
     width: 50%;
@@ -98,13 +100,17 @@ body.access-management-overlay #content {
 }
 
 #access-management table {
+    border-collapse: collapse;
+    margin: 1em 0;
     width: 100%;
 }
 
 #access-management table th,
 #access-management table td {
-    padding: 0.25em;
     border: 1px solid #eee;
+    font-weight: normal;
+    padding: 0.25em;
+    text-align: left;
 }
 
 #access-management table th,

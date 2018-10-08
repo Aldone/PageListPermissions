@@ -28,7 +28,7 @@ class PageListPermissions extends WireData implements Module {
             'title' => 'Page List Permissions',
             'summary' => 'Enable viewing and editing permissions set by User Groups module via Page List',
             'author' => 'Teppo Koivula',
-            'version' => 40,
+            'version' => '0.4.1',
             'singular' => true,
             'autoload' => true,
             'requires' => 'ProcessUserGroups',
